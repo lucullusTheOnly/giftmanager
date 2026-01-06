@@ -664,97 +664,6 @@ def register():
     return render_template('register.html', joining_code=joining_code)
 
 
-@app.route('/add2/', methods=['GET', 'POST'])
-@login_required
-def add2():
-    # Load data from JSON files
-    gift_ideas_data = load_gift_ideas()
-    users = load_users()
-
-    # Get the current user's information
-    current_user = session['username']
-    current_user_data = next((user for user in users if user["username"] == current_user), None)
-
-    if not current_user_data:
-        flash("Current user not found.", "danger")
-        return redirect(url_for('dashboard'))
-
-    # Get the current user's groups (default to empty list if not present)
-    current_user_groups = current_user_data.get("groups", [])
-
-    # Filter the user list based on groups
-    if not current_user_groups:
-        # If the current user has no groups, allow them to see all users
-        user_list = [
-            {"full_name": user["full_name"], "username": user["username"]}
-            for user in users
-            if not user.get('guest')
-        ]
-    else:
-        # Filter the user list to include only those in the current user's groups
-        user_list = [
-            {"full_name": user["full_name"], "username": user["username"]}
-            for user in users
-            if not user.get("groups") or any(group in user.get("groups", []) for group in current_user_groups)
-            and not user.get('guest')
-        ]
-
-    if request.method == 'POST':
-        # Handle the form submission, process the data, and add the idea
-        user = request.form['user']
-        name = request.form['name']
-        description = request.form.get('description', '')
-        link = request.form.get('link', '')
-        value = request.form.get('value', None)  # Optional field
-        image_path = request.form.get('imagePath', '')  # Get the image path from the form
-
-        # Retrieve the logged-in user's username
-        added_by = session.get('username')
-
-        # Find the largest gift idea ID
-        largest_gift_idea_id = max((idea['gift_idea_id'] for idea in gift_ideas_data), default=0)
-
-
-        # Process custom fields from the form
-        custom_fields = {}
-        # Get all form keys that start with 'custom_field_key_'
-        for key in request.form.keys():
-            if key.startswith('custom_field_key_'):
-                field_num = key.split('_')[-1]
-                field_key = request.form.get(f'custom_field_key_{field_num}', '').strip()
-                field_value = request.form.get(f'custom_field_value_{field_num}', '').strip()
-                
-                if field_key and field_value:  # Only add if both key and value are provided
-                    custom_fields[field_key] = field_value
-
-        # Create a new idea object
-        new_idea = {
-            'user_id': user,
-            'gift_idea_id': largest_gift_idea_id + 1,
-            'gift_name': name,
-            'description': description,
-            'link': link,
-            'value': value,
-            'added_by': added_by,  # Track who added the idea
-            'bought_by': None,  # Initialize as not bought
-            'image_path': image_path,  # Store the image URL here
-            'custom_fields': custom_fields,  # Add custom fields
-            'last_updated': datetime.now().isoformat()  # Set initial last_updated timestamp
-        }
-
-        # Append the new idea to the list
-        gift_ideas_data.append(new_idea)
-
-        # Save the updated ideas back to the file
-        save_gift_ideas(gift_ideas_data)
-
-        
-        # Redirect to the user's gift ideas page
-        return redirect(url_for('user_gift_ideas', selected_user_id=user))
-    imgenabled = read_env_variable('IMGENABLED', 'true').lower() == 'true'
-    # Render the "Add Idea" page with the filtered user list
-    return render_template('add2.html', user_list=user_list, imgenabled=imgenabled)
-
 @app.route('/need_restart', methods=['GET'])
 def need_restart():
     if os.getenv("SECRET_KEY") in [None, '']:
@@ -763,9 +672,10 @@ def need_restart():
         return redirect(url_for('setup'))    
 
 
+@app.route('/add_idea', methods=['GET', 'POST'])
 @app.route('/add_idea/<path:selected_user_id>', methods=['GET', 'POST'])
 @login_required
-def add_idea(selected_user_id):
+def add_idea(selected_user_id=""):
     # Load data from JSON files
     gift_ideas_data = load_gift_ideas()
     users = load_users()
@@ -849,10 +759,18 @@ def add_idea(selected_user_id):
 
         # Flash success message and redirect
         flash(f'Idea "{name}" added for user {user} by {added_by}!', 'success')
+        # Always redirect to the list of ideas for the user, that we added the idea to
+        selected_user_id = user
         return redirect(url_for('user_gift_ideas', selected_user_id=user))
     imgenabled = read_env_variable('IMGENABLED', 'true').lower() == 'true'
+    markdown_support = read_env_variable('MARKDOWN_SUPPORT', 'false').lower()
     # Render the "Add Idea" page with the user list, gift ideas, and the selected user as default
-    return render_template('add_idea.html', user_list=user_list, gift_ideas=gift_ideas_data, default_user=selected_user_id, imgenabled=imgenabled)
+    return render_template('add_idea.html',
+        user_list=user_list,
+        gift_ideas=gift_ideas_data,
+        default_user=selected_user_id,
+        imgenabled=imgenabled,
+        markdown_support=markdown_support)
 
 
 @app.route('/delete_idea/<int:idea_id>', methods=['DELETE'])
@@ -1293,6 +1211,7 @@ def user_gift_ideas(selected_user_id):
     
     imgenabled = read_env_variable('IMGENABLED', 'true').lower() == 'true'
     hide_purchaser = read_env_variable('HIDE_PURCHASER', 'false').lower() == 'true'
+    markdown_support = read_env_variable('MARKDOWN_SUPPORT', 'false').lower()
 
     # Ensure each idea has custom_fields and last_updated fields for template
     for idea in user_gift_ideas:
@@ -1317,6 +1236,7 @@ def user_gift_ideas(selected_user_id):
         user_namels=user_namels,
         imgenabled=imgenabled,
         hide_purchaser=hide_purchaser,
+        markdown_support=markdown_support,
         is_shared_list_member=is_shared_list_member)
 
 
@@ -1549,10 +1469,11 @@ def edit_idea(idea_id):
                 return redirect(url_for('user_gift_ideas', selected_user_id=idea['user_id']))
             
             imgenabled = read_env_variable('IMGENABLED', 'true').lower() == 'true'
+            markdown_support = read_env_variable('MARKDOWN_SUPPORT', 'false').lower()
             if 'custom_fields' not in idea:
                 idea['custom_fields'] = {}
             # Render the edit idea form with pre-filled data
-            return render_template('edit_idea.html', idea=idea, imgenabled=imgenabled)
+            return render_template('edit_idea.html', idea=idea, imgenabled=imgenabled, markdown_support=markdown_support)
         else:
             flash('You are not authorized to edit this idea.', 'danger')
     else:
@@ -2296,6 +2217,7 @@ def setup_advanced():
     hide_purchaser = read_env_variable("HIDE_PURCHASER", 'false')
     current_reorder = read_env_variable("REORDERING")
     images = read_env_variable("IMGENABLED")
+    markdown_support = read_env_variable('MARKDOWN_SUPPORT', 'false')
     current_currency_symbol = get_currency_symbol()
     current_currency_position = get_currency_position()
     enable_self_registration = read_env_variable("ENABLE_SELF_REGISTRATION", "false").lower() == 'true'
@@ -2306,6 +2228,7 @@ def setup_advanced():
                          hide_purchaser=hide_purchaser,
                          current_reorder=current_reorder,
                          images=images,
+                         markdown_support=markdown_support,
                          current_currency_symbol=current_currency_symbol,
                          current_currency_position=current_currency_position,
                          enable_self_registration=enable_self_registration,
@@ -2335,6 +2258,14 @@ def update_reordering():
 def update_images():
     images = request.form.get('images', 'true').strip()
     set_key(dotenv_path, "IMGENABLED", images)
+    return redirect(url_for('setup_advanced'))
+
+# Route to update MARKDOWN_SUPPORT (POST request)
+@app.route('/update_markdown_support', methods=['POST'])
+@admin_required
+def update_markdown_support():
+    markdown_support = request.form.get('markdown_support', 'false').strip()
+    set_key(dotenv_path, "MARKDOWN_SUPPORT", markdown_support)
     return redirect(url_for('setup_advanced'))
 
 @app.route('/rundl')

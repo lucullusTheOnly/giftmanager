@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ideas List</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css" rel="stylesheet">
+    {% if markdown_support != 'false' -%}
+    <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
+    <link rel="stylesheet" href="/static/github-markdown.css">
+    {% endif -%}
     <link rel="icon" href="/favicon.ico" type="image/png">
     <meta name="theme-color" content="#000000"/>
     <link rel="manifest" href="/manifest.json">
@@ -58,7 +62,8 @@
         }
 
         .description {
-            max-width: 400px;
+            /*max-width: 400px;*/
+            white-space: pre-wrap;
             word-wrap: break-word;
             color: var(--secondary-text-color);
         }
@@ -122,15 +127,15 @@
             filter: invert(1) brightness(1.5);
         }
         /* Base styles for the image and container */
-    .image{
-        justify-self: center;
-        width: 100%;
-        height: auto;
-    }
-    .divimage{
-        width: 10%;
-        height: fit-content;
-    }
+        .image{
+            justify-self: center;
+            width: 100%;
+            height: auto;
+        }
+        .divimage{
+            width: 10%;
+            height: fit-content;
+        }
         /* Mobile-specific styles */
         @media screen and (max-width: 640px) {
             .image {
@@ -206,6 +211,20 @@
             color: #90cdf4;
         }
 
+        {% if markdown_support != 'false' -%}
+        /* Fix bullets for listings, that are globally disabled by Tailwind */
+        .markdown-body ul {
+            list-style: disc;
+            padding-left: 2em;
+        }
+        .markdown-body ol {
+            list-style: decimal;
+            padding-left: 2em;
+        }
+        .markdown-body li {
+            list-style-position: outside;
+        }
+        {% endif -%}
     </style>
     <script>
         // Inline script to apply the theme from the cookie immediately
@@ -253,14 +272,14 @@
                                 {% endfor %}
                             </div>
                             {% endif %}
-                            <p class="text-gray-600 description" style="white-space: pre-wrap;">{{ gift_idea.description }}</p>
+                            <p class="text-gray-600 {% if markdown_support != 'false' %}markdown-body{% else %}sec-text description{% endif %}">{{ gift_idea.description }}</p>
                             {% if gift_idea.value %}
                             <p class="text-gray-600 sec-text">Estimated Value: {{ format_currency(gift_idea.value) }}</p>
                             {% endif %}
                             <p class="text-gray-600 sec-text">Added By: {{ get_full_name(gift_idea.added_by) }}</p>
                         </div>
                         {% if imgenabled %}
-                        <div class="divimage">
+                        <div class="divimage flex-shrink-0">
                             <!-- Display image if available -->
                             {% if gift_idea.image_path %}
                                 <img src="{{ gift_idea.image_path }}" alt="OG Image" class="image">
@@ -268,7 +287,7 @@
                         </div>
                         {% endif %}
 
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center sm:space-x-2 idea-actions">
+                        <div class="flex flex-col flex-shrink-0 sm:flex-row items-start sm:items-center sm:space-x-2 idea-actions">
                             {% if gift_idea.added_by == session['username'] or is_shared_list_member %}
                             <button class="bg-red-500 text-white px-3 py-1 rounded delete-idea-button flex justify-center items-center" data-idea-id="{{ gift_idea.gift_idea_id }}">
                                 <img src="{{ url_for('static', filename='icons/delete.svg') }}" alt="Delete Icon" class="h-5 w-5 helplogo">
@@ -388,6 +407,14 @@
         const htmlElement = document.documentElement;
         const theme = getThemeFromCookie();
         htmlElement.setAttribute('data-theme', theme);
+
+        {% if markdown_support != 'false' -%}
+        var converter = new showdown.Converter();
+        document.querySelectorAll('.markdown-body').forEach(description => {
+            var html = converter.makeHtml(description.innerHTML)
+            description.innerHTML = html
+        });
+        {% endif -%}
     });
 
         const backButton = document.getElementById('backButton');
@@ -497,30 +524,30 @@
             });
         }
 
-    // Add the code for editing an idea here
-    document.querySelectorAll('.edit-idea-link').forEach(link => {
-        link.addEventListener('click', (event) => {
-            event.preventDefault(); // Prevent the default link behavior (i.e., navigating to a new page)
-            const ideaId = link.getAttribute('data-idea-id');
-            editIdea(ideaId);
+        // Add the code for editing an idea here
+        document.querySelectorAll('.edit-idea-link').forEach(link => {
+            link.addEventListener('click', (event) => {
+                event.preventDefault(); // Prevent the default link behavior (i.e., navigating to a new page)
+                const ideaId = link.getAttribute('data-idea-id');
+                editIdea(ideaId);
+            });
         });
-    });
 
-    function editIdea(ideaId) {
-        // Redirect to the edit page for the specific idea
-        window.location.href = `/edit_idea/${ideaId}`;
-    }
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(registration => {
-            console.log('ServiceWorker registration successful');
-          })
-          .catch(err => {
-            console.log('ServiceWorker registration failed: ', err);
-          });
-      });
-    }  
+        function editIdea(ideaId) {
+            // Redirect to the edit page for the specific idea
+            window.location.href = `/edit_idea/${ideaId}`;
+        }
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registration successful');
+                })
+                .catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
+        }
     </script>    
     
 </body>

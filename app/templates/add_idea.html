@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>New Ideas</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css">
+    {% if markdown_support != 'false' -%}
+    <link rel="stylesheet" href="/static/github-markdown.css">
+    <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
+    {% endif -%}
     <link rel="icon" href="/favicon.ico" type="image/png">
     <meta name="theme-color" content="#000000"/>
     <link rel="manifest" href="/manifest.json">
@@ -98,6 +102,22 @@
             background-color: var(--card-bg-color);
             border-color: var(--card-border-color);
         }
+ 
+        {% if markdown_support != 'false' -%}
+        /* Fix bullets for listings, that are globally disabled by Tailwind */
+        .markdown-body ul {
+            list-style: disc;
+            padding-left: 2em;
+        }
+        .markdown-body ol {
+            list-style: decimal;
+            padding-left: 2em;
+        }
+        .markdown-body li {
+            list-style-position: outside;
+        }
+        {% endif -%}
+
     </style>
     <script>
         // Inline script to apply the theme from the cookie immediately
@@ -141,6 +161,31 @@ function debounce(func, wait) {
         timeout = setTimeout(() => func.apply(this, args), wait);
     };
 }
+
+{% if markdown_support != 'false' -%}
+function compile_markdown(){
+    var converter = new showdown.Converter()
+    var desc_element = document.getElementById("description")
+    var markdown_output = document.getElementById('markdown_output')
+    markdown_output.innerHTML = converter.makeHtml(desc_element.value)
+}
+
+function toggle_markdown(){
+    var markdown_preview = document.getElementById("markdown_preview")
+    var activate_markdown = document.getElementById("activate_markdown_checkbox")
+    if(activate_markdown.checked){
+        var converter = new showdown.Converter()
+        var desc_element = document.getElementById("description")
+        var markdown_output = document.getElementById('markdown_output')
+        markdown_output.innerHTML = converter.makeHtml(desc_element.value)
+        markdown_preview.classList.remove("hidden")
+        document.getElementById("description").addEventListener('input', compile_markdown)
+    } else {
+        markdown_preview.classList.add("hidden")
+        document.getElementById("description").removeEventListener('input', compile_markdown)
+    }
+}
+{% endif -%}
 
 // Event listener for link input change
 document.addEventListener('DOMContentLoaded', function() {
@@ -198,6 +243,17 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('imagePath').value = ''; // Clear the hidden input
         }
     });
+
+    {% if markdown_support != 'false' -%}
+    if (document.getElementById("activate_markdown_checkbox").checked){
+        var converter = new showdown.Converter()
+        var desc_element = document.getElementById("description")
+        var markdown_output = document.getElementById('markdown_output')
+        markdown_output.innerHTML = converter.makeHtml(desc_element.value)
+
+        document.getElementById("description").addEventListener('input', compile_markdown)
+    }
+    {% endif -%}
 });
 
 let customFieldCounter = 0;
@@ -240,10 +296,13 @@ function addCustomField() {
     <main class="main container mx-auto p-8">
         <section class="section shadow-lg rounded-lg p-6">
             <h1 class="text-2xl font-semibold mb-4">Add Ideas</h1>
-            <form action="{{ url_for('add_idea', selected_user_id=default_user) }}" method="post">
+            <form action="{{ url_for('add_idea') }}" method="post">
                 <div class="mb-4">
                     <label for="user" class="block sec-text font-bold">Add to:</label>
                     <select name="user" id="user" class="border inputer rounded py-2 px-3 w-full" required>
+                        {% if not default_user -%}
+                        <option disabled selected value> -- Choose here -- </option>
+                        {% endif -%}
                         {% for user in user_list %}
                         <option value="{{ user['username'] }}" {% if user['username'] == default_user %}selected{% endif %}>{{ user['full_name'] }}</option>
                         {% endfor %}
@@ -254,9 +313,24 @@ function addCustomField() {
                     <input type="text" name="name" id="name" class="border inputer rounded py-2 px-3 w-full" required>
                 </div>
                 <div class="mb-4">
-                    <label for="description" class="block sec-text font-bold">Description (Optional):</label>
+                    <div class="flex flex-row justify-between">
+                        <label for="description" class="block sec-text font-bold">Description (Optional):</label>
+                        {% if markdown_support != 'false' -%}
+                        <div class="flex flex-row">
+                            <input type="checkbox" id="activate_markdown_checkbox" {% if markdown_support == 'default' %}checked{% endif %} onchange="toggle_markdown()">
+                            <label for="activate_markdown_checkbox" class="ml-2 block sec-text">Activate Markdown Preview</label>
+                        </div>
+                        {% endif -%}
+                    </div>
                     <textarea name="description" id="description" class="border inputer rounded py-2 px-3 w-full"></textarea>
                 </div>
+                {% if markdown_support != 'false' -%}
+                <div class="relative border border-gray-300 rounded-lg p-4 w-full {% if markdown_support != 'default' %}hidden{% endif %}" id="markdown_preview">
+                    <legend class="main absolute -top-3 left-4 px-2 text-sm font-semibold text-gray-700">Markdown Preview</legend>
+                    <div class="mb-4 markdown-body" id="markdown_output">
+                    </div>
+                </div>
+                {% endif -%}
                 <div class="mb-4">
                     <label for="link" class="block sec-text font-bold">Link (Optional):</label>
                     <input type="url" name="link" id="link" class="border inputer rounded py-2 px-3 w-full">
@@ -294,16 +368,16 @@ function addCustomField() {
         backButton.addEventListener('click', () => {
             window.location.href = '/dashboard'; // Replace '/dashboard' with the actual URL of your dashboard page
         });
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-          .then(registration => {
-            console.log('ServiceWorker registration successful');
-          })
-          .catch(err => {
-            console.log('ServiceWorker registration failed: ', err);
-          });
-      });
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                .then(registration => {
+                    console.log('ServiceWorker registration successful');
+                })
+                .catch(err => {
+                    console.log('ServiceWorker registration failed: ', err);
+                });
+            });
     }
     </script>
 </body>

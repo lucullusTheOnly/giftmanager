@@ -5,101 +5,120 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ idea.gift_name }} - Edit an idea</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css">
+    {% if markdown_support != 'false' -%}
+    <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
+    <link rel="stylesheet" href="/static/github-markdown.css">
+    {% endif -%}
     <link rel="icon" href="/favicon.ico" type="image/png">
     <meta name="theme-color" content="#000000"/>
     <link rel="manifest" href="/manifest.json">
     <style>
-         :root {
-        --bg-color: #f0f0f0;
-        --text-color: #333;
-        --button-bg-color: rgb(42, 42, 218);
-        --button-hover-bg-color: rgb(10, 10, 190);
-        --button-text-color: black;
-        --card-bg-color: white;
-        --card-border-color: #ebebeb;
-        --card-hover-bg-color: #ddd;
-        --sidebar-bg-color: #f0f0f0;
-        --overlay-bg-color: rgba(0, 0, 0, 0.5);
-        --hr-border-color: #333;
-        --alert-bg-color: #ffe6e6;
-        --alert-border-color: #ff4d4d;
-        --alert-text-color: #b30000;
-        --primary-text-color: #333;
-        --secondary-text-color: rgba(75,85,99);
-        --header-bg-color: #ffffff;
-        --header-text-color: #333;
-        --main-bg-color: #ffffff;
-        --section-bg-color: #f3f4f6;
-        --helplogo-color: #333;
-    }
+        :root {
+            --bg-color: #f0f0f0;
+            --text-color: #333;
+            --button-bg-color: rgb(42, 42, 218);
+            --button-hover-bg-color: rgb(10, 10, 190);
+            --button-text-color: black;
+            --card-bg-color: white;
+            --card-border-color: #ebebeb;
+            --card-hover-bg-color: #ddd;
+            --sidebar-bg-color: #f0f0f0;
+            --overlay-bg-color: rgba(0, 0, 0, 0.5);
+            --hr-border-color: #333;
+            --alert-bg-color: #ffe6e6;
+            --alert-border-color: #ff4d4d;
+            --alert-text-color: #b30000;
+            --primary-text-color: #333;
+            --secondary-text-color: rgba(75,85,99);
+            --header-bg-color: #ffffff;
+            --header-text-color: #333;
+            --main-bg-color: #ffffff;
+            --section-bg-color: #f3f4f6;
+            --helplogo-color: #333;
+        }
 
-    [data-theme="dark"] {
-        --bg-color: rgb(38 38 38);
-        --text-color: #e0e0e0;
-        --button-bg-color: rgb(218, 42, 42);
-        --button-hover-bg-color: rgb(190, 10, 10);
-        --button-text-color: white;
-        --card-bg-color: black;
-        --card-border-color: #333;
-        --card-hover-bg-color: #2e2e2e;
-        --sidebar-bg-color: #1e1e1e;
-        --overlay-bg-color: rgba(0, 0, 0, 0.8);
-        --hr-border-color: #e0e0e0;
-        --alert-bg-color: #4d1919;
-        --alert-border-color: #ff4d4d;
-        --alert-text-color: #ffb3b3;
-        --primary-text-color: #e0e0e0;
-        --secondary-text-color: #aaaaaa;
-        --header-bg-color: rgb(18, 18, 18);
-        --header-text-color: #e0e0e0;
-        --main-bg-color: #121212;
-        --section-bg-color: #1e1e1e;
-        --helplogo-color: #e0e0e0;
-    }
+        [data-theme="dark"] {
+            --bg-color: rgb(38 38 38);
+            --text-color: #e0e0e0;
+            --button-bg-color: rgb(218, 42, 42);
+            --button-hover-bg-color: rgb(190, 10, 10);
+            --button-text-color: white;
+            --card-bg-color: black;
+            --card-border-color: #333;
+            --card-hover-bg-color: #2e2e2e;
+            --sidebar-bg-color: #1e1e1e;
+            --overlay-bg-color: rgba(0, 0, 0, 0.8);
+            --hr-border-color: #e0e0e0;
+            --alert-bg-color: #4d1919;
+            --alert-border-color: #ff4d4d;
+            --alert-text-color: #ffb3b3;
+            --primary-text-color: #e0e0e0;
+            --secondary-text-color: #aaaaaa;
+            --header-bg-color: rgb(18, 18, 18);
+            --header-text-color: #e0e0e0;
+            --main-bg-color: #121212;
+            --section-bg-color: #1e1e1e;
+            --helplogo-color: #e0e0e0;
+        }
 
-    .header {
-        background-color: var(--header-bg-color);
-        color: var(--header-text-color);
-    }
+        .header {
+            background-color: var(--header-bg-color);
+            color: var(--header-text-color);
+        }
 
-    .main {
-        background-color: var(--bg-color);
-    }
+        .main {
+            background-color: var(--bg-color);
+        }
 
-    .section {
-        background-color: var(--section-bg-color);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        border-radius: 8px;
-        padding: 24px;
-    }
-    body {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-    }
+        .section {
+            background-color: var(--section-bg-color);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 24px;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
 
-    .helplogo {
-        fill: var(--helplogo-color);
-        width: 24px;
-        height: 24px;
-    }
+        .helplogo {
+            fill: var(--helplogo-color);
+            width: 24px;
+            height: 24px;
+        }
 
-    [data-theme="dark"] .helplogo {
-        filter: invert(1) brightness(1.5);
-    }
-    .sec-text{
-        color: var(--secondary-text-color);
-    }
-    .inputer{
-        color: var(--button-text-color);
-        background-color: var(--card-bg-color);
-    }
-    #imageContainer{
-        width: 200px;
-    }
-    .custom-field-group {
-        background-color: var(--card-bg-color);
-        border-color: var(--card-border-color);
-    }
+        [data-theme="dark"] .helplogo {
+            filter: invert(1) brightness(1.5);
+        }
+        .sec-text{
+            color: var(--secondary-text-color);
+        }
+        .inputer{
+            color: var(--button-text-color);
+            background-color: var(--card-bg-color);
+        }
+        #imageContainer{
+            width: 200px;
+        }
+        .custom-field-group {
+            background-color: var(--card-bg-color);
+            border-color: var(--card-border-color);
+        }
+
+        {% if markdown_support != 'false' -%}
+        /* Fix bullets for listings, that are globally disabled by Tailwind */
+        .markdown-body ul {
+            list-style: disc;
+            padding-left: 2em;
+        }
+        .markdown-body ol {
+            list-style: decimal;
+            padding-left: 2em;
+        }
+        .markdown-body li {
+            list-style-position: outside;
+        }
+        {% endif -%}
     </style>
 <script>
     // Inline script to apply the theme from the cookie immediately
@@ -151,6 +170,32 @@ function debounce(func, wait) {
         timeout = setTimeout(() => func.apply(this, args), wait);
     };
 }
+
+{% if markdown_support != 'false' -%}
+function compile_markdown(){
+    var converter = new showdown.Converter()
+    var desc_element = document.getElementById("description")
+    var markdown_output = document.getElementById('markdown_output')
+    markdown_output.innerHTML = converter.makeHtml(desc_element.value)
+    console.log("compile")
+}
+
+function toggle_markdown(){
+    var markdown_preview = document.getElementById("markdown_preview")
+    var activate_markdown = document.getElementById("activate_markdown_checkbox")
+    if(activate_markdown.checked){
+        var converter = new showdown.Converter()
+        var desc_element = document.getElementById("description")
+        var markdown_output = document.getElementById('markdown_output')
+        markdown_output.innerHTML = converter.makeHtml(desc_element.value)
+        markdown_preview.classList.remove("hidden")
+        document.getElementById("description").addEventListener('input', compile_markdown)
+    } else {
+        markdown_preview.classList.add("hidden")
+        document.getElementById("description").removeEventListener('input', compile_markdown)
+    }
+}
+{% endif -%}
 
 // Event listener for link input change
 document.addEventListener('DOMContentLoaded', function () {
@@ -210,6 +255,17 @@ document.addEventListener('DOMContentLoaded', function () {
             imagePathInput.value = ''; // Clear the hidden input
         }
     });
+
+    {% if markdown_support != 'false' -%}
+    if (document.getElementById("activate_markdown_checkbox").checked){
+        var converter = new showdown.Converter()
+        var desc_element = document.getElementById("description")
+        var markdown_output = document.getElementById('markdown_output')
+        markdown_output.innerHTML = converter.makeHtml(desc_element.value)
+
+        document.getElementById("description").addEventListener('input', compile_markdown)
+    }
+    {% endif -%}
 });
 </script>
 </head>
@@ -219,9 +275,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     <form method="post" action="{{ url_for('edit_idea', idea_id=idea.gift_idea_id) }}" class="section p-6 rounded-lg shadow-md mb-8">
         <!-- Description Field -->
-        <label for="description" class="block mb-2 sec-text">Description (Optional):</label>
+        <div class="flex flex-row justify-between">
+            <label for="description" class="block sec-text font-bold">Description (Optional):</label>
+            {% if markdown_support != 'false' -%}
+            <div class="flex flex-row">
+                <input type="checkbox" id="activate_markdown_checkbox" {% if markdown_support == 'default' %}checked{% endif %} onchange="toggle_markdown()">
+                <label for="activate_markdown_checkbox" class="ml-2 block sec-text">Activate Markdown Preview</label>
+            </div>
+            {% endif -%}
+        </div>
         <textarea id="description" name="description" rows="4" cols="50" class="border rounded py-2 px-3 w-full inputer">{{ idea.description }}</textarea>
-        
+        {% if markdown_support != 'false' -%}
+        <div class="relative border border-gray-300 rounded-lg p-4 mt-4 w-full {% if markdown_support != 'default' %}hidden{% endif %}" id="markdown_preview">
+            <legend class="main absolute -top-3 left-4 px-2 text-sm font-semibold text-gray-700">Markdown Preview</legend>
+            <div class="mb-4 markdown-body" id="markdown_output">
+            </div>
+        </div>
+        {% endif -%}
         <br>
     
         <!-- Link Field -->
@@ -287,10 +357,10 @@ document.addEventListener('DOMContentLoaded', function () {
         </div>
     
         <!-- Save and Cancel Buttons -->
-        <button type="submit" class="bg-blue-500 text-white px-3 py-2 rounded mt-4 hover:bg-blue-700 focus:outline-none focus:shadow-outline-blue active:bg-blue-800">
+        <button type="submit" class="bg-green-500 text-white px-3 py-2 rounded mt-4 hover:bg-green-700 focus:outline-none focus:shadow-outline-green active:bg-green-800">
             Save Changes
         </button>
-        <a href="{{ url_for('user_gift_ideas', selected_user_id=idea.user_id) }}" class="text-blue-500 hover:underline">Cancel</a>
+        <a href="{{ url_for('user_gift_ideas', selected_user_id=idea.user_id) }}" class="ml-6 text-red-500 hover:underline">Cancel</a>
     </form>
 </div>
 <script>

@@ -355,6 +355,26 @@
                     </form>
 
                     <div class="my-6 border-t border-gray-300"></div>
+                    
+                    <!-- Markdown Section -->
+                    <form method="post" action="{{ url_for('update_markdown_support') }}">  
+                        <div class="mb-4">
+                            <p class="mb-2">Enable markdown support</p>
+                            <label for="markdown_support" class="block sec-text font-medium">Markdown Support</label>
+                            <select id="markdown_support" name="markdown_support" class="p-3 w-full border rounded-lg inputer">
+                                <option value="default" {% if markdown_support == 'default' %}selected{% endif %}>Enabled, activated by default</option>
+                                <option value="true" {% if markdown_support == 'true' %}selected{% endif %}>Enabled, deactivated by default</option>
+                                <option value="false" {% if markdown_support == 'false' %}selected{% endif %}>Disabled</option>
+                            </select>
+                        </div>
+                        <button 
+                            type="submit" 
+                            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition">
+                            Save
+                        </button>
+                    </form>
+
+                    <div class="my-6 border-t border-gray-300"></div>
 
                     <!-- Currency Settings Section -->
                     <form method="post" action="{{ url_for('update_currency_settings') }}">
